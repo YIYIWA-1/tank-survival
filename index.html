@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tank Survivor 2D - Ultimate Forge Update</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui-layer">
+        <div id="damage-overlay"></div>
+        <div id="sound-toggle" onclick="toggleSound()">🔊</div>
+        <div class="hud-top">
+            <div style="width: 40%;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <span>HP <span id="hp-text">100/100</span></span>
+                    <span style="font-size: 10px; color: #3498db;">MP <span id="mp-text">100</span></span>
+                </div>
+                <div class="bar-container"><div class="hp-bar" id="hp-bar"></div><div class="shield-bar" id="shield-bar"></div></div>
+                <div class="bar-container" style="height: 6px; margin-top: 2px; border-color: #2c3e50;"><div class="energy-bar" id="energy-bar"></div></div>
+                <div id="ammo-display">AMMO: <span id="ammo-val">3/3</span></div>
+            </div>
+            <div style="text-align: center;">
+                <div id="wave-text" style="font-size: 20px; color: #e74c3c; text-shadow: 1px 1px 1px #000;">WAVE 1</div>
+                <div id="score-text" style="text-shadow: 1px 1px 1px #000;">0</div>
+                <div id="enemy-counter">ENEMIES: 0</div>
+            </div>
+            <div style="width: 40%; text-align: right;">
+                <div>LV <span id="lvl-text">1</span></div>
+                <div class="bar-container"><div class="xp-bar" id="xp-bar"></div></div>
+            </div>
+        </div>
+        <div id="cheat-container">
+            <div id="cheat-toggle-btn" onclick="toggleCheatMenu()">▼ 作弊菜单</div>
+            <div id="cheat-menu-items">
+                <div class="cheat-item-btn" onclick="cheatAction('heal')">回血</div>
+                <div class="cheat-item-btn" id="btn-cheat-speed" onclick="cheatAction('speed')">加速 (OFF)</div>
+                <div class="cheat-item-btn" id="btn-cheat-crit" onclick="cheatAction('crit')">暴击 (OFF)</div>
+                <div class="cheat-item-btn" id="btn-cheat-cd" onclick="cheatAction('cd')">无CD (OFF)</div>
+                <div class="cheat-item-btn" id="btn-cheat-infmp" onclick="cheatAction('infmp')">无限蓝 (OFF)</div>
+                <div class="cheat-item-btn" onclick="cheatAction('kill')">清屏 </div>
+                <div class="cheat-item-btn" onclick="cheatAction('spawn')">刷怪</div>
+            </div>
+        </div>
+        <div id="stats-btn" onclick="toggleStatsMenu()">📊 属性</div>
+        <div class="boss-hp-container" id="boss-ui">
+            <div class="boss-label">警告: BOSS 来袭</div>
+            <div class="boss-hp-fill" id="boss-hp-bar"></div>
+        </div>
+        <div id="joystick-zone"></div>
+        <div id="item-btn" class="skill-btn-base">
+            <span class="skill-icon" id="item-icon">ITM</span>
+            <span id="item-timer" class="skill-timer"></span>
+            <div id="item-cd-overlay" class="cd-overlay"></div>
+        </div>
+        <div id="skill-btn" class="skill-btn-base">
+            <span class="skill-icon">★</span>
+            <span id="skill-timer" class="skill-timer"></span>
+            <div id="skill-cd-overlay" class="cd-overlay"></div>
+        </div>
+        <div id="ult-btn" class="skill-btn-base">
+            <span class="skill-icon">ULT</span>
+            <span id="ult-timer" class="skill-timer"></span>
+            <div id="ult-cd-overlay" class="cd-overlay"></div>
+        </div>
+        
+        <div id="start-menu" class="menu-overlay">
+            <div class="menu-scaler">
+                <h1>TANK SURVIVOR</h1>
+                <div style="margin-bottom: 10px; color: #7f8c8d;">选择武器配置</div>
+                <div class="weapon-selector">
+                    <div class="weapon-btn selected" id="wpn-cannon" onclick="selectWeapon('CANNON')">重炮<span>范围爆炸/定点</span></div>
+                    <div class="weapon-btn" id="wpn-laser" onclick="selectWeapon('LASER')">激光<span>折射/扫射</span></div>
+                    <div class="weapon-btn" id="wpn-swarm" onclick="selectWeapon('SWARM')">衍射<span>召唤/寄生</span></div>
+                    <div class="weapon-btn" id="wpn-shotgun" onclick="selectWeapon('SHOTGUN')">霰弹<span>爆发/击退</span></div>
+                    <div class="weapon-btn" id="wpn-shockwave" onclick="selectWeapon('SHOCKWAVE')">冲击<span>禁锢/回响</span></div>
+                </div>
+                <div style="margin-bottom: 20px; color: #7f8c8d;">选择难度</div>
+                <div class="btn" onclick="startGame(0)">简单</div>
+                <div class="btn" onclick="startGame(1)">普通</div>
+                <div class="btn" onclick="startGame(2)">困难</div>
+                <div class="btn" style="background:#8e44ad;" onclick="openInventory()">📦 仓库 & 道具</div>
+                <label class="checkbox-container">
+                    <input type="checkbox" id="god-mode-check" onchange="toggleCheatBtn()">
+                    <span style="color: #9b59b6;">开启作弊模式</span>
+                </label>
+            </div>
+        </div>
+        
+        <div id="inventory-menu" class="menu-overlay hidden">
+            <div id="inv-menu">
+                <div class="inv-close" onclick="closeInventory()">×</div>
+                <div class="inv-top-bar">
+                    <div id="frag-count" style="color: #f1c40f; font-weight: bold; font-size: 18px;">碎片: 0</div>
+                    <div style="display:flex; gap:5px;">
+                        <button class="filter-btn" style="background:#9b59b6;" onclick="autoForgeAll()" id="auto-forge-btn">一键锻造</button>
+                        <button class="filter-btn" style="background:#e74c3c;" onclick="toggleBatchMode()" id="batch-mode-btn">批量分解</button>
+                    </div>
+                </div>
+                <div class="inv-equip-area">
+                    <div class="equip-slot" id="eq-act" onclick="selectEquipSlot('active')">主动<br>暂无</div>
+                    <div class="equip-slot" id="eq-p1" onclick="selectEquipSlot('passive1')">被动1<br>暂无</div>
+                    <div class="equip-slot" id="eq-p2" onclick="selectEquipSlot('passive2')">被动2<br>暂无</div>
+                </div>
+                <div class="inv-filters">
+                    <button class="filter-btn active" onclick="setInvFilter('ALL')">全部</button>
+                    <button class="filter-btn" onclick="setInvFilter('ACTIVE')">主动道具</button>
+                    <button class="filter-btn" onclick="setInvFilter('PASSIVE')">被动道具</button>
+                    <select id="rarity-filter" onchange="setRarityFilter(this.value)" style="background:#7f8c8d; color:white; border:none; border-radius:4px; padding:6px; font-size:14px; margin-left: 5px; outline:none;">
+                        <option value="ALL">所有品质</option>
+                        <option value="WHITE" style="color:black; background:white;">白色</option>
+                        <option value="GRAY" style="color:black; background:#bdc3c7;">灰色</option>
+                        <option value="GREEN" style="color:white; background:#2ecc71;">绿色</option>
+                        <option value="BLUE" style="color:white; background:#3498db;">蓝色</option>
+                        <option value="PURPLE" style="color:white; background:#9b59b6;">紫色</option>
+                        <option value="ORANGE" style="color:white; background:#e67e22;">橙色</option>
+                        <option value="RED" style="color:white; background:#e74c3c;">红色</option>
+                        <option value="GOLD" style="color:black; background:#f1c40f;">金色</option>
+                        <option value="BLACK" style="color:white; background:#000000;">黑色</option>
+                    </select>
+                </div>
+                <div class="inv-grid-wrapper">
+                    <div class="inv-grid" id="inv-grid"></div>
+                    <div class="pagination" id="inv-pagination">
+                        <button onclick="changePage(-1)">&lt;</button>
+                        <span id="page-indicator">1 / 1</span>
+                        <button onclick="changePage(1)">&gt;</button>
+                    </div>
+                    <div class="cheat-inv-btn" id="cheat-inv-btn" onclick="cheatGiveItems()">点击获得全白道具 (作弊)</div>
+                </div>
+                <div class="inv-bottom-panel">
+                    <div id="inv-details-empty" style="text-align:center; margin-top:20px; color:#7f8c8d;">请在上方选择或点击装备槽查看详情</div>
+                    <div id="inv-details-content" style="display:none; flex-direction:column;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <div style="flex-grow:1;">
+                                <div class="inv-details-title" id="det-name"></div>
+                                <div class="inv-details-rarity" id="det-rarity"></div>
+                            </div>
+                            <div class="inv-actions" id="det-actions"></div>
+                        </div>
+                        <div class="inv-details-desc" id="det-desc"></div>
+                        <div id="det-forge"></div>
+                    </div>
+                    <div id="inv-batch-actions" style="display:none; text-align:center; height:100%; justify-content:center; flex-direction:column;">
+                        <div id="batch-selected-info" style="margin-bottom: 15px; color:#f1c40f; font-weight:bold; font-size:16px;">已选择 0 个，预计获得 0 碎片</div>
+                        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                            <button class="btn" style="background:#f39c12; min-width:80px; font-size:14px; padding:10px;" onclick="selectAllCurrentPage()">全选本页</button>
+                            <button class="btn" style="background:#e74c3c; min-width:80px; font-size:14px; padding:10px;" onclick="confirmBatchSell()">确认分解</button>
+                            <button class="btn" style="background:#7f8c8d; min-width:80px; font-size:14px; padding:10px;" onclick="toggleBatchMode()">取消批量</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="levelup-menu" class="menu-overlay hidden">
+            <div class="menu-scaler">
+                <h2 style="color: #f1c40f; margin-bottom: 10px;">LEVEL UP!</h2>
+                <div id="upgrade-container"></div>
+            </div>
+        </div>
+        
+        <div id="stats-menu" class="menu-overlay hidden">
+            <div class="menu-scaler">
+                <h2 style="color: #3498db; margin-bottom: 15px;">战车状态</h2>
+                <div id="stats-content" class="stats-scroll-area"></div>
+                <div style="display:flex; flex-direction:column; width:100%; align-items:center;">
+                    <div class="btn" onclick="toggleStatsMenu()">继续战斗</div>
+                    <div class="btn" style="background:#c0392b; font-size:16px;" onclick="quitGame()">放弃游戏返回主菜单</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="gameover-menu" class="menu-overlay hidden">
+            <div class="menu-scaler">
+                <h1 style="color: #c0392b;">GAME OVER</h1>
+                <div id="end-stats" style="text-align: center; margin-bottom: 20px; line-height: 1.6; color: #333; font-weight: bold;"></div>
+                <div class="btn" onclick="restartGame()">再来一局</div>
+                <div class="btn" onclick="showMainMenu()">返回菜单</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/sound.js"></script>
+    <script src="js/classes.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
