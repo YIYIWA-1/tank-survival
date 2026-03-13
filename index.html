@@ -181,10 +181,24 @@
             </div>
         </div>
     </div>
-    
-    <script src="js/sound.js"></script>
-    <script src="js/classes.js"></script>
-    <script src="js/inventory.js"></script>
-    <script src="js/game.js"></script>
+
+    <script src="js/config/constants.js"></script>
+    <script src="js/config/items.js"></script>
+    <script src="js/systems/audio.js"></script>
+    <script src="js/entities/Player.js"></script>
+    <script src="js/entities/Entities.js"></script>
+    <script src="js/systems/input.js"></script>
+    <script src="js/systems/game.js"></script>
+
+    <script>
+        window.onload = () => { 
+            canvas = document.getElementById('gameCanvas'); 
+            ctx = canvas.getContext('2d'); 
+            resize(); 
+            window.addEventListener('resize', resize); 
+            setupInputs(); 
+            requestAnimationFrame(gameLoop); 
+        };
+    </script>
 </body>
 </html>
